@@ -4,77 +4,139 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
-class ArtisanRegistrationSerializer(serializers.ModelSerializer):
-
-    speciality = serializers.ChoiceField(choices=ArtisanProfile.specialisation.choices)
-    city = serializers.CharField(max_length=100)
-    state = serializers.CharField(max_length=100)
-    country = serializers.CharField(max_length=100)
+###Artisan
+class ArtisanDetailSerializer(serializers.ModelSerializer):
+    #Handles the profile portion only.
+    location = serializers.SerializerMethodField()
 
     class Meta:
-        model = User
-        fields = ['id', 'first_name', 'last_name', 'phone_number', 'speciality', 'city', 'state', 'country']
+        model  = ArtisanProfile
+        fields = ['speciality', 'city', 'state', 'location', 'country']
+
+    def get_location(self, obj):
+        return f"{obj.city}, {obj.state}"
+
+class ArtisanRegistrationSerializer(serializers.ModelSerializer):
+   
+    artisan_detail = ArtisanDetailSerializer(write_only=True)
+
+    class Meta:
+        model  = User
+        fields = ['id', 'name', 'phone_number', 'artisan_detail', 'created_at']
+        read_only_fields = ['id', 'created_at']
 
     def create(self, validated_data):
-        profile_data = {
-            'speciality': validated_data.pop('speciality'),
-            'city': validated_data.pop('city'),
-            'state': validated_data.pop('state'),
-            'country': validated_data.pop('country')
-        }
+        profile_data = validated_data.pop('artisan_detail')
 
         user = User.objects.create_user(
             phone_number=validated_data['phone_number'],
-            first_name=validated_data['first_name'],
-            last_name=validated_data['last_name'],
+            name=validated_data['name'],
             role=User.Role.ARTISAN,
         )
-
         ArtisanProfile.objects.create(artisan=user, **profile_data)
+        return user
+    
+    def to_representation(self, instance):
+        
+        profile = instance.artisan_profile  
+        return {
+            'id':           instance.id,
+            'name':         instance.name,
+            'phone_number': instance.phone_number,
+            'created_at':   instance.created_at,
+            'artisan_detail': ArtisanDetailSerializer(profile).data  
+        }
+
+class ArtisanProfileSerializer(serializers.ModelSerializer):
+   
+    name         = serializers.CharField(source='artisan.name')
+    phone_number = serializers.CharField(source='artisan.phone_number')
+    location     = serializers.SerializerMethodField()
+
+    class Meta:
+        model  = ArtisanProfile              
+        fields = [
+            'id', 'name', 'phone_number',
+            'speciality', 'city', 'state', 'location', 'country'
+        ]
+
+    def get_location(self, obj):
+        return f"{obj.city}, {obj.state}"
+    
+###Customer
+class CustomerDetailSerializer(serializers.ModelSerializer):
+
+    location = serializers.SerializerMethodField()
+
+    class Meta:
+        model  = CustomerProfile
+        fields = ['city', 'state', 'location', 'country']
+
+    def get_location(self, obj):
+        return f"{obj.city}, {obj.state}"
 
 
-class CustomerProfileSerializer(serializers.ModelSerializer):
+class CustomerRegistrationSerializer(serializers.ModelSerializer):
 
-    city = serializers.CharField(max_length=100)
-    state = serializers.CharField(max_length=100)
-    country = serializers.CharField(max_length=100)
+    customer_detail = CustomerDetailSerializer(write_only=True)
 
     class Meta:
         model = User
-        fields = ['id', 'first_name', 'last_name', 'phone_number', 'city', 'state', 'country']
+        fields = ['id', 'name', 'phone_number', 'customer_detail', 'created_at']
+        read_only_fields = ['id', 'created_at']
 
     def create(self, validated_data):
-        profile_data = {
-            'city': validated_data.pop('city'),
-            'state': validated_data.pop('state'),
-            'country': validated_data.pop('country'),
-        }
+        profile_data = validated_data.pop('customer_detail')
 
         user = User.objects.create_user(
             phone_number=validated_data['phone_number'],
-            first_name=validated_data['first_name'],
-            last_name=validated_data['last_name'],
+            name=validated_data['name'],
             role=User.Role.CUSTOMER,
         )
 
         CustomerProfile.objects.create(customer=user, **profile_data)
-
         return user
     
+    def to_representation(self, instance):
+
+        profile = instance.customer_profile
+        return {
+            'id':           instance.id,
+            'name':         instance.name,
+            'phone_number': instance.phone_number,
+            'created_at':   instance.created_at,
+            'customer_detail': CustomerDetailSerializer(profile).data
+        }
+    
+class CustomerProfileSerializer(serializers.ModelSerializer):
+   
+    name         = serializers.CharField(source='customer.name')
+    phone_number = serializers.CharField(source='customer.phone_number')
+    location     = serializers.SerializerMethodField()
+
+    class Meta:
+        model  = ArtisanProfile              
+        fields = [
+            'id', 'name', 'phone_number', 'city', 'state', 'location', 'country'
+        ]
+
+    def get_location(self, obj):
+        return f"{obj.city}, {obj.state}"
+    
+####admin to be continued
 class AdminRegistrationSerializer(serializers.ModelSerializer):
 
     password = serializers.CharField(write_only=True)  # never return password in response
 
     class Meta:
         model = User
-        fields = ['id', 'first_name', 'last_name', 'email', 'password']
+        fields = ['id', 'name', 'email', 'password']
 
     def create(self, validated_data):
         user = User.objects.create_user(
             email=validated_data['email'],
             password=validated_data['password'],
-            first_name=validated_data['first_name'],
-            last_name=validated_data['last_name'],
+            name=validated_data['name'],
             role=User.Role.ADMIN,
             is_staff=True,  # allows access to Django admin panel
         )

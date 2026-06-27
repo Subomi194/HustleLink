@@ -45,8 +45,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         ARTISAN = 'artisan', 'Artisan'
         ADMIN = 'admin', 'Admin'
 
-    first_name = models.CharField(max_length=100)
-    last_name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100)
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.ARTISAN)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
@@ -59,32 +58,30 @@ class User(AbstractBaseUser, PermissionsMixin):
     objects = UserManager()
 
     USERNAME_FIELD = 'phone_number'
-    REQUIRED_FIELDS = ['first_name', 'last_name']
+    REQUIRED_FIELDS = ['name']
 
     def __str__(self):
         return self.phone_number or self.email or 'User'
     
 class ArtisanProfile(models.Model):
 
-    class specialisation(models.TextChoices):
+    class Specialisation(models.TextChoices):
         PLUMBER = 'plumber', 'Plumber'
         ELECTRICIAN = 'electrician', 'Electrician'
         CARPENTER = 'carpenter', 'Carpenter'
         TAILOR = 'tailor', 'Tailor'
         HAIRSTYLIST = 'hairstylist', 'Hairstylist'
-        CARPENTER = 'carpenter', 'Carpenter'
-        ELECTRICIAN = 'electrician', 'Electrician'
         BARBER = 'barber', 'Barber'
         MAKEUP_ARTIST = 'makeup_artist', 'Makeup Artist'
 
     artisan = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='artisan_profile')
-    speciality = models.CharField(max_length=20, choices=specialisation.choices)
+    speciality = models.CharField(max_length=20, choices=Specialisation.choices)
     city = models.CharField(max_length=100)
     state = models.CharField(max_length=100)
     country = models.CharField(max_length=100)
 
     def __str__(self):
-        return f"{self.artisan.first_name}'s Profile"
+        return f"{self.artisan.name}'s Profile"
     
 class CustomerProfile(models.Model):
     customer = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='customer_profile')
@@ -93,7 +90,7 @@ class CustomerProfile(models.Model):
     country = models.CharField(max_length=100)
 
     def __str__(self):
-        return f"{self.customer.first_name}'s Profile"
+        return f"{self.customer.name}'s Profile"
     
 
     
