@@ -19,8 +19,11 @@ from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 from rest_framework_simplejwt.views import TokenRefreshView, TokenObtainPairView
 
+from core.views import HomeView
+
 urlpatterns = [
     path('admin/', admin.site.urls),
+     path("", HomeView.as_view(), name="home"),
     path('api/users/', include('users.urls')),
 
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
