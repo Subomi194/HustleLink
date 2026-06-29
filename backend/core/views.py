@@ -11,5 +11,6 @@ class HomeView(APIView):
         return Response({
             "name": "HustleLink API",
             "version": "1.0",
-            "docs": "/api/v1/docs/",
+            "swagger docs": "/api/v1/docs/",
+            "redoc docs": "/api/v2/docs/"
         })
