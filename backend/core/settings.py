@@ -167,6 +167,10 @@ STATIC_URL = 'static/'
 if not DEBUG:
     STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
+#AT Configuration
+AT_API_KEY = os.getenv('AT_API_KEY')
+AT_USERNAME = os.getenv('AT_USERNAME')
+
 SPECTACULAR_SETTINGS = {
     'TITLE': 'HustleLink API',
     'DESCRIPTION': 'API documentation for HustleLink application',

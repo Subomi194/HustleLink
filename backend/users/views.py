@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.http import HttpResponse
 from rest_framework import generics, viewsets, status, permissions
 from rest_framework.views import APIView
 from users.models import ArtisanProfile, CustomerProfile
@@ -11,6 +12,7 @@ from users.serializers import (
     ArtisanProfileSerializer)
 from drf_spectacular.utils import extend_schema
 from drf_spectacular.types import OpenApiTypes
+from users.ussd import ussd_handler
 
 User = get_user_model()
 
@@ -47,7 +49,7 @@ class ArtisanViewSet(viewsets.ReadOnlyModelViewSet):
                 artisan__is_active=True
             )
         
-        elif user.is_staff or user.role == 'admin':
+        elif user.is_staff:
             # Admin sees everything
             queryset = ArtisanProfile.objects.filter(
                 artisan__is_active=True
@@ -74,8 +76,23 @@ class ArtisanViewSet(viewsets.ReadOnlyModelViewSet):
                 )
             
         if speciality:
-            queryset = queryset.filter(speciality__icontains=speciality)
+            queryset = queryset.filter(specialities__name__icontains=speciality).distinct()
 
         return queryset
+    
+class USSDView(APIView):  # ✅ renamed — no collision
+    permission_classes = [permissions.AllowAny]
+
+    @extend_schema(
+        summary="USSD",
+        responses={200: OpenApiTypes.STR},
+        description="Process incoming USSD requests"
+    )
+    def post(self, request):
+        # Just hand off the raw Django request to your existing handler
+        django_response = ussd_handler(request._request)  #  unwrap DRF request → raw Django request
+        return HttpResponse(django_response.content, content_type="text/plain")
+
+
 
 
